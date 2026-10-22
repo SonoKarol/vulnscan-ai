@@ -1,76 +1,87 @@
-import { useState } from 'react';
-import ScanForm from './components/ScanForm';
-import ScanReport from './components/ScanReport';
-import ScanLoader from './components/ScanLoader';
+import { useEffect, useState } from 'react';
+import Topbar from './components/Topbar.jsx';
+import Home from './components/Home.jsx';
+import ScanView from './components/ScanView.jsx';
+import HistoryDrawer from './components/HistoryDrawer.jsx';
+import { useEngineStatus, useScan, useTheme } from './lib/hooks.js';
+import { loadHistory, saveReport, removeReport, clearHistory, previousScan } from './lib/history.js';
+import { TriangleAlert } from 'lucide-react';
 
 export default function App() {
-  const [state, setState] = useState('idle'); // idle | loading | result | error
-  const [report, setReport] = useState(null);
-  const [error, setError] = useState(null);
+  const engine = useEngineStatus();
+  const theme = useTheme();
+  const { state, start, reset, open } = useScan();
+  const [url, setUrl] = useState('');
+  const [history, setHistory] = useState(loadHistory);
+  const [drawer, setDrawer] = useState(false);
 
-  async function handleScan(url) {
-    setState('loading');
-    setError(null);
-    try {
-      const res = await fetch('/api/scan', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Errore durante la scansione');
-      setReport(data);
-      setState('result');
-    } catch (err) {
-      setError(err.message);
-      setState('error');
+  // Salva nello storico quando la scansione (AI inclusa) è terminata.
+  useEffect(() => {
+    if (state.phase === 'done' && state.report && !state.fromHistory) {
+      setHistory(h => saveReport(h, state.report));
     }
-  }
+  }, [state.phase, state.report, state.fromHistory]);
 
-  function handleReset() {
-    setState('idle');
-    setReport(null);
-    setError(null);
-  }
+  useEffect(() => { window.scrollTo({ top: 0 }); }, [state.phase === 'idle']);
+
+  const scan = (target, options) => {
+    setUrl(target);
+    start(target, options);
+  };
+
+  const onHome = state.phase === 'idle' || state.phase === 'error';
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-      <Header />
-      <main style={{ flex: 1, padding: '0 24px 48px', maxWidth: 900, margin: '0 auto', width: '100%' }}>
-        {(state === 'idle' || state === 'error') && (
-          <ScanForm onScan={handleScan} error={error} />
-        )}
-        {state === 'loading' && <ScanLoader />}
-        {state === 'result' && report && (
-          <ScanReport report={report} onReset={handleReset} />
-        )}
+    <div className="app">
+      <Topbar
+        engine={engine}
+        theme={theme}
+        historyCount={history.length}
+        onHistory={() => setDrawer(true)}
+        onHome={reset}
+      />
+
+      <main>
+        <div className="container">
+          {onHome ? (
+            <Home
+              url={url}
+              setUrl={setUrl}
+              onScan={scan}
+              error={state.phase === 'error' ? state.error : null}
+              engine={engine}
+              history={history}
+              onOpen={open}
+              onShowHistory={() => setDrawer(true)}
+            />
+          ) : (
+            <ScanView
+              state={state}
+              engine={engine.status}
+              previous={state.report ? previousScan(history, state.report) : null}
+              onReset={reset}
+              onRescan={() => scan(state.report?.target ?? state.target, { ai: engine.status?.state === 'ready' })}
+            />
+          )}
+        </div>
       </main>
-      <Footer />
+
+      <footer className="footer">
+        <div className="container">
+          <TriangleAlert size={14} aria-hidden />
+          Usa VulnScan AI solo su sistemi di tua proprietà o con autorizzazione esplicita: scansionare siti di terzi senza consenso è illegale.
+        </div>
+      </footer>
+
+      {drawer && (
+        <HistoryDrawer
+          history={history}
+          onClose={() => setDrawer(false)}
+          onOpen={report => { open(report); setDrawer(false); }}
+          onRemove={id => setHistory(h => removeReport(h, id))}
+          onClear={() => setHistory(clearHistory())}
+        />
+      )}
     </div>
-  );
-}
-
-function Header() {
-  return (
-    <header style={{ borderBottom: '1px solid var(--border)', padding: '20px 24px', display: 'flex', alignItems: 'center', gap: 16 }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-        <span style={{ color: 'var(--accent)', fontSize: 20 }}>⬡</span>
-        <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 600, letterSpacing: '0.08em', fontSize: 15 }}>
-          VULNSCAN<span style={{ color: 'var(--accent)' }}>AI</span>
-        </span>
-      </div>
-      <div style={{ flex: 1 }} />
-      <span style={{ color: 'var(--text-dim)', fontSize: 11, letterSpacing: '0.1em' }}>
-        v1.0.0 — USE RESPONSIBLY
-      </span>
-    </header>
-  );
-}
-
-function Footer() {
-  return (
-    <footer style={{ borderTop: '1px solid var(--border)', padding: '16px 24px', textAlign: 'center', color: 'var(--text-dim)', fontSize: 11, letterSpacing: '0.05em' }}>
-      ⚠ Solo per uso su sistemi di tua proprietà o con permesso esplicito. Scansionare siti di terzi senza consenso è illegale.
-    </footer>
   );
 }

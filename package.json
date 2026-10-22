@@ -1,0 +1,23 @@
+{
+  "name": "vulnscan-ai",
+  "version": "2.0.0",
+  "private": true,
+  "description": "VulnScan AI — scanner di sicurezza web con modello AI embedded (nessun servizio esterno)",
+  "workspaces": [
+    "backend",
+    "frontend"
+  ],
+  "engines": {
+    "node": ">=22.12"
+  },
+  "scripts": {
+    "dev": "concurrently -k -n api,web -c green,cyan \"npm run dev -w backend\" \"npm run dev -w frontend\"",
+    "build": "npm run build -w frontend",
+    "start": "npm start -w backend",
+    "test": "npm test -w backend",
+    "model:download": "npm run model:download -w backend"
+  },
+  "devDependencies": {
+    "concurrently": "^10.0.6"
+  }
+}
