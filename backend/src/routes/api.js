@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { config } from '../config.js';
 import { engine } from '../ai/engine.js';
 import { explainReport } from '../ai/analyze.js';
+import { explainBuiltin } from '../ai/builtin.js';
 import { runScan } from '../scanner/index.js';
 import { normalizeUrl, checkTor } from '../net/http.js';
 
@@ -59,24 +60,28 @@ api.post('/scan', async (req, res) => {
 
     if (ai === false) {
       step('ai', 'skipped', 'Disattivata per questa scansione');
-    } else if (engine.state !== 'ready') {
-      step('ai', 'skipped', engine.state === 'disabled' ? 'AI disabilitata' : 'Modello non ancora pronto');
     } else {
       step('ai', 'running');
-      try {
-        const result = await explainReport(report, {
-          signal: controller.signal,
-          onQueued: position => send({ type: 'ai-queued', position }),
-          onProgress: progress => send({ type: 'ai-progress', ...progress }),
-        });
-        send({ type: 'ai', ai: result });
-        step('ai', 'done', `${result.tokens} token · ${(result.durationMs / 1000).toFixed(1)} s`);
-      } catch (err) {
-        if (controller.signal.aborted) return;
-        console.error('[AI ERROR]', err);
-        send({ type: 'ai-error', message: err.message });
-        step('ai', 'error', err.message);
+      let result = null;
+      // Il modello AI opzionale, se scaricato, ha la precedenza; altrimenti (o se
+      // fallisce) l'analista integrato garantisce sempre sommario e priorità.
+      if (engine.state === 'ready') {
+        try {
+          result = await explainReport(report, {
+            signal: controller.signal,
+            onQueued: position => send({ type: 'ai-queued', position }),
+            onProgress: progress => send({ type: 'ai-progress', ...progress }),
+          });
+        } catch (err) {
+          if (controller.signal.aborted) return;
+          console.error('[AI ERROR] uso l\'analista integrato:', err.message);
+        }
       }
+      result ??= explainBuiltin(report);
+      send({ type: 'ai', ai: result });
+      step('ai', 'done', result.engine === 'builtin'
+        ? 'analista integrato'
+        : `${result.tokens} token · ${(result.durationMs / 1000).toFixed(1)} s`);
     }
     send({ type: 'done' });
   } catch (err) {

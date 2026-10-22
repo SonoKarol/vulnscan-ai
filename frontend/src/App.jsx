@@ -57,10 +57,9 @@ export default function App() {
           ) : (
             <ScanView
               state={state}
-              engine={engine.status}
               previous={state.report ? previousScan(history, state.report) : null}
               onReset={reset}
-              onRescan={() => scan(state.report?.target ?? state.target, { ai: engine.status?.state === 'ready' })}
+              onRescan={() => scan(state.report?.target ?? state.target, { ai: state.wantAi })}
             />
           )}
         </div>

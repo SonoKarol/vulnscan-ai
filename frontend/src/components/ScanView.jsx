@@ -8,7 +8,7 @@ const STEPS = [
   { id: 'fetch', label: 'Richiesta HTTP e redirect' },
   { id: 'tls', label: 'TLS, HTTPS e file esposti' },
   { id: 'analyze', label: 'Controlli di sicurezza' },
-  { id: 'ai', label: 'Analisi AI embedded' },
+  { id: 'ai', label: 'Analisi e priorità' },
 ];
 
 const STEP_ICON = {
@@ -19,7 +19,7 @@ const STEP_ICON = {
   error: <X size={15} />,
 };
 
-export default function ScanView({ state, engine, previous, onReset, onRescan }) {
+export default function ScanView({ state, previous, onReset, onRescan }) {
   const { report, phase } = state;
   const running = phase === 'running';
 
@@ -46,7 +46,7 @@ export default function ScanView({ state, engine, previous, onReset, onRescan })
           <ProgressCard steps={state.steps} />
         </div>
       ) : (
-        <Report report={report} scan={state} engine={engine} previous={previous} />
+        <Report report={report} scan={state} previous={previous} />
       )}
     </div>
   );

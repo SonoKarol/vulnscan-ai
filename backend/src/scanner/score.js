@@ -1,7 +1,7 @@
 import { SEVERITIES } from './checks.js';
 
 // Punteggio deterministico: stesso sito, stesso voto — indipendente dal modello AI.
-const WEIGHTS = { critical: 35, high: 20, medium: 10, low: 4, info: 0 };
+export const WEIGHTS = { critical: 35, high: 20, medium: 10, low: 4, info: 0 };
 
 export function score(findings) {
   const counts = Object.fromEntries(SEVERITIES.map(s => [s, 0]));
