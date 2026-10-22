@@ -18,3 +18,7 @@ npm-debug.log*
 Thumbs.db
 .idea/
 .vscode/
+
+# Modelli AI scaricati (GGUF)
+backend/models/
+*.gguf
