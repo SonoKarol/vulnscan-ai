@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Brain, CircleCheck, Download, LoaderCircle, RotateCw, ServerOff, TriangleAlert, X } from 'lucide-react';
+import { CircleCheck, Download, LoaderCircle, RotateCw, ServerOff, TriangleAlert, X } from 'lucide-react';
 import { cancelModel, loadModel } from '../lib/api.js';
 import { formatBytes } from '../lib/format.js';
 
@@ -36,7 +36,7 @@ export default function EngineCard({ engine }) {
     <div className="card engine" aria-live="polite">
       {state === 'ready' && (
         <>
-          <Head icon={<CircleCheck size={20} />} title="Motore AI pronto" sub="Il modello gira in locale, dentro l’app" />
+          <Head icon={<CircleCheck size={20} />} title="Modello AI pronto" sub="Usato al posto dell’analista integrato, sempre in locale" />
           <dl className="engine-meta">
             <dt>Modello</dt><dd>{model.label}</dd>
             <dt>Accelerazione</dt><dd>{GPU_LABEL[status.gpu] ?? status.gpu}</dd>
@@ -48,13 +48,14 @@ export default function EngineCard({ engine }) {
 
       {state === 'idle' && (
         <>
-          <Head icon={<Brain size={20} />} title="Installa il modello AI" sub={`${model.label}${model.sizeHint ? ` · ${model.sizeHint}` : ''} · download una tantum`} />
+          <Head icon={<CircleCheck size={20} />} title="Analista integrato attivo" sub="Analisi istantanea, nessun download richiesto" />
           <p className="muted" style={{ fontSize: 13.5 }}>
-            Il modello viene scaricato da Hugging Face e salvato in <code>backend/models</code>. Da quel momento l’analisi AI funziona anche offline.
+            Vuoi testi più ricchi e discorsivi? Puoi aggiungere un modello AI locale
+            ({model.label}{model.sizeHint ? `, ${model.sizeHint}` : ''}). È del tutto facoltativo.
           </p>
           <div className="engine-actions">
-            <button className="btn btn-primary" disabled={busy} onClick={() => act(loadModel)}>
-              <Download size={16} /> Scarica modello
+            <button className="btn btn-sm" disabled={busy} onClick={() => act(loadModel)}>
+              <Download size={14} /> Scarica modello AI (opzionale)
             </button>
           </div>
         </>
@@ -87,7 +88,7 @@ export default function EngineCard({ engine }) {
 
       {state === 'error' && (
         <>
-          <Head icon={<TriangleAlert size={20} />} title="Il modello non è disponibile" sub={model.label} tone="bad" />
+          <Head icon={<TriangleAlert size={20} />} title="Modello AI non disponibile" sub={`${model.label} · l’analista integrato resta attivo`} tone="bad" />
           <p className="mono" style={{ fontSize: 12.5, color: 'var(--text-2)', overflowWrap: 'anywhere' }}>{status.error}</p>
           <div className="engine-actions">
             <button className="btn btn-sm" disabled={busy} onClick={() => act(loadModel)}><RotateCw size={14} /> Riprova</button>
@@ -96,12 +97,12 @@ export default function EngineCard({ engine }) {
       )}
 
       {state === 'disabled' && (
-        <Head icon={<Brain size={20} />} title="AI disattivata" sub="AI_ENABLED=false in backend/.env — restano attivi tutti i controlli" />
+        <Head icon={<CircleCheck size={20} />} title="Analista integrato attivo" sub="Modello AI opzionale disattivato (AI_ENABLED=false)" />
       )}
 
-      {state !== 'disabled' && (
+      {['ready', 'error'].includes(state) && (
         <p className="dim" style={{ fontSize: 12.5 }}>
-          Cambia modello con <code>AI_MODEL</code> in <code>backend/.env</code>: {status.presets.map(p => p.id).join(' · ')} o qualsiasi GGUF.
+          Modello opzionale: cambialo con <code>AI_MODEL</code> in <code>backend/.env</code>: {status.presets.map(p => p.id).join(' · ')} o qualsiasi GGUF.
         </p>
       )}
     </div>

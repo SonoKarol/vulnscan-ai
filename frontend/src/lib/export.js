@@ -26,7 +26,7 @@ export function toMarkdown(report) {
     '',
   ];
   if (report.ai) {
-    lines.push(`## Analisi AI (${report.ai.model})`, '', report.ai.summary, '');
+    lines.push(`## Analisi (${report.ai.model})`, '', report.ai.summary, '');
     if (report.ai.priorities.length) {
       lines.push('### Priorità', '', ...report.ai.priorities.map((p, i) => `${i + 1}. ${p}`), '');
     }
@@ -37,7 +37,7 @@ export function toMarkdown(report) {
     lines.push(`### [${SEVERITY[f.severity].label}] ${f.title}`, '', `*${f.category}*`, '', f.description, '');
     if (f.evidence) lines.push(`**Evidenza:** \`${f.evidence}\``, '');
     const scenario = report.ai?.scenarios?.[f.id];
-    if (scenario) lines.push(`**Scenario d'attacco (AI):** ${scenario}`, '');
+    if (scenario) lines.push(`**Scenario d'attacco${report.ai.engine === 'builtin' ? '' : ' (AI)'}:** ${scenario}`, '');
     for (const s of f.remediation) lines.push(`**Correzione — ${s.label}:**`, '', '```', s.code, '```', '');
     if (f.references.length) lines.push(...f.references.map(r => `- [${r.label}](${r.url})`), '');
   }

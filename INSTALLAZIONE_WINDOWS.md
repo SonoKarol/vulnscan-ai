@@ -1,6 +1,6 @@
 # 🛡️ VulnScan AI — Guida Installazione Windows
 
-L’AI gira **dentro l’app**: non serve più installare né avviare Ollama.
+Funziona subito: niente Ollama e **nessun modello da scaricare**.
 
 ---
 
@@ -13,11 +13,6 @@ L’AI gira **dentro l’app**: non serve più installare né avviare Ollama.
    ```cmd
    node --version
    ```
-
-### (Opzionale) Accelerazione GPU
-- **NVIDIA**: aggiorna i driver — CUDA viene usato automaticamente.
-- **AMD / Intel**: con driver aggiornati viene usato Vulkan.
-- Senza GPU il modello gira su CPU (più lento ma funzionante).
 
 ---
 
@@ -39,17 +34,8 @@ Il file `.env` funziona già così com’è. ✅
 npm run dev
 ```
 
-Una sola finestra: avvia backend e frontend insieme. Apri **http://localhost:5173**.
-
-Al primo avvio, nella card **“Installa il modello AI”** premi **Scarica modello**
-(~3 GB con il preset consigliato, una volta sola). In alternativa, da terminale:
-
-```cmd
-npm run model:download
-```
-
-Quando la card mostra **“Motore AI pronto”** l’analisi AI è attiva.
-Le scansioni funzionano anche prima: ottieni subito il report dei controlli automatici.
+Una sola finestra: avvia backend e frontend insieme. Apri **http://localhost:5173** e scansiona:
+report, scenari d’attacco e priorità arrivano subito, grazie all’analista integrato.
 
 ### Versione “produzione” (un solo processo, nessun server di sviluppo)
 ```cmd
@@ -60,9 +46,11 @@ Poi apri **http://localhost:3001**.
 
 ---
 
-## Scegliere il modello
+## (Opzionale) Modello AI per testi più ricchi
 
-In `backend\.env`:
+Non è necessario. Se lo vuoi, premi **“Scarica modello AI (opzionale)”** nella home oppure lancia
+`npm run model:download`. Con una GPU NVIDIA (CUDA) o AMD/Intel (Vulkan) e driver aggiornati
+viene accelerato automaticamente. Scegli il modello in `backend\.env`:
 
 | `AI_MODEL=`   | Download | Consigliato per |
 |---------------|----------|-----------------|
@@ -76,13 +64,14 @@ Dopo aver cambiato modello riavvia `npm run dev` e scaricalo dalla UI.
 
 ## Risoluzione problemi
 
-### ❌ “Il modello non è disponibile” / errore di download
-→ Controlla la connessione a Hugging Face e premi **Riprova**.
+### ❌ “Modello AI non disponibile” / errore di download
+→ Riguarda solo il modello opzionale: l’analisi continua con l’analista integrato.
+Controlla la connessione a Hugging Face e premi **Riprova**.
 Dietro un proxy aziendale scarica il file `.gguf` a mano e imposta `AI_MODEL=C:\percorso\modello.gguf`.
 
-### ❌ L’analisi AI è lenta
-→ Normale su sola CPU con modelli grandi: usa `AI_MODEL=leggero`, oppure verifica che la card
-mostri l’accelerazione GPU. Il report base è comunque disponibile subito.
+### ❌ L’analisi è lenta
+→ Succede solo con il modello opzionale su sola CPU: usa `AI_MODEL=leggero`, oppure
+`AI_ENABLED=false` per tornare all’analista integrato (istantaneo).
 
 ### ❌ “Target non consentito: indirizzo IP interno”
 → Per sicurezza localhost e la rete locale sono bloccati. Per testare un tuo server di sviluppo

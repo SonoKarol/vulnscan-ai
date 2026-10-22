@@ -7,15 +7,14 @@ export function engineSummary({ status, offline }) {
   if (offline) return { tone: 'bad', text: 'Backend offline' };
   if (!status) return { tone: 'warn', text: 'Connessione…' };
   switch (status.state) {
-    case 'ready': return { tone: 'ok', text: `AI pronta · ${status.model.label}` };
+    case 'ready': return { tone: 'ok', text: `AI · ${status.model.label}` };
     case 'downloading': {
       const p = status.progress;
       return { tone: 'warn', text: p?.total ? `Download modello ${Math.floor((p.downloaded / p.total) * 100)}%` : 'Download modello…' };
     }
     case 'loading': return { tone: 'warn', text: 'Caricamento modello…' };
-    case 'error': return { tone: 'bad', text: 'Errore modello AI' };
-    case 'disabled': return { tone: '', text: 'AI disattivata' };
-    default: return { tone: '', text: 'Modello AI da installare' };
+    // senza modello (o se il modello ha problemi) l'analisi usa l'analista integrato
+    default: return { tone: 'ok', text: 'Analisi integrata' };
   }
 }
 
@@ -32,7 +31,7 @@ export default function Topbar({ engine, theme, historyCount, onHistory, onHome 
           <small>v2</small>
         </button>
         <div className="spacer" />
-        <button className="pill" onClick={onHome} title="Stato del motore AI embedded">
+        <button className="pill" onClick={onHome} title="Stato dell’analisi">
           <span className={`dot ${summary.tone}`} aria-hidden />
           <span>{summary.text}</span>
         </button>

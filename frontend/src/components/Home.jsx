@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { ArrowRight, Cpu, EyeOff, Globe, Lock, RotateCw, ScanLine, ShieldCheck, TriangleAlert, Zap } from 'lucide-react';
 import EngineCard from './EngineCard.jsx';
 import { useTor } from '../lib/hooks.js';
@@ -8,11 +8,12 @@ export default function Home({ url, setUrl, onScan, error, engine, history, onOp
   return (
     <div className="fade-up">
       <section className="hero">
-        <span className="eyebrow">Security scanner · AI on-device</span>
+        <span className="eyebrow">Security scanner · tutto in locale</span>
         <h1>Trova le falle del tuo sito <em>prima che lo faccia qualcun altro.</em></h1>
         <p>
-          Header, TLS, cookie, CORS e file esposti analizzati in pochi secondi. Un modello AI che gira
-          dentro l’app spiega i rischi e ti dice cosa correggere per primo — nessun dato lascia il tuo computer.
+          Header, TLS, cookie, CORS e file esposti analizzati in pochi secondi. L’analista integrato spiega
+          i rischi e ti dice cosa correggere per primo — subito, senza scaricare nulla e senza che i dati
+          lascino il tuo computer.
         </p>
       </section>
 
@@ -32,8 +33,8 @@ export default function Home({ url, setUrl, onScan, error, engine, history, onOp
         </div>
         <div className="card feature">
           <Cpu size={20} />
-          <h3>AI embedded</h3>
-          <p>LLM locale via llama.cpp, accelerato su GPU quando disponibile. Niente Ollama, niente cloud, niente API key.</p>
+          <h3>Analisi immediata</h3>
+          <p>Sommario, scenari d’attacco e priorità generati all’istante, senza scaricare nulla. Opzionale: un modello AI locale per testi più ricchi.</p>
         </div>
         <div className="card feature">
           <EyeOff size={20} />
@@ -53,14 +54,12 @@ function ScanForm({ url, setUrl, onScan, error, engine }) {
   const { tor, check } = useTor(onion);
   const secure = /^https:\/\//i.test(url.trim());
 
-  useEffect(() => { if (aiReady) setUseAi(true); }, [aiReady]);
-
   const torBlocked = onion && tor !== 'online';
   const canScan = url.trim() && consent && !torBlocked && !engine.offline;
 
   function submit(e) {
     e.preventDefault();
-    if (canScan) onScan(url.trim(), { ai: aiReady && useAi });
+    if (canScan) onScan(url.trim(), { ai: useAi });
   }
 
   return (
@@ -104,12 +103,11 @@ function ScanForm({ url, setUrl, onScan, error, engine }) {
       )}
 
       <div className="form-row">
-        <label className="switch" title={aiReady ? '' : 'Il modello AI non è ancora pronto'}>
-          <input type="checkbox" checked={aiReady && useAi} disabled={!aiReady} onChange={e => setUseAi(e.target.checked)} />
+        <label className="switch">
+          <input type="checkbox" checked={useAi} onChange={e => setUseAi(e.target.checked)} />
           <span className="track" aria-hidden />
-          <span>Analisi AI {aiReady ? <span className="dim">· {engine.status.model.label}</span> : <span className="dim">· modello non pronto</span>}</span>
+          <span>Analisi e priorità <span className="dim">· {aiReady ? engine.status.model.label : 'analista integrato'}</span></span>
         </label>
-        {!aiReady && <span className="form-hint">La scansione funziona anche senza AI.</span>}
       </div>
 
       <label className="check">

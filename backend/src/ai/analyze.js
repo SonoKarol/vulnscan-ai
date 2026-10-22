@@ -105,6 +105,7 @@ export async function explainReport(report, { signal, onQueued, onProgress } = {
   }
   return {
     model: engine.status().model.label,
+    engine: 'llm',
     summary: clip(result.summary, LIMITS.summary),
     scenarios,
     priorities: (Array.isArray(result.priorities) ? result.priorities : []).map(p => clip(p, LIMITS.priority)).filter(Boolean).slice(0, LIMITS.priorities),

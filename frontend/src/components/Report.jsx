@@ -5,11 +5,11 @@ import {
 } from 'lucide-react';
 import { RISK, SEVERITY, SEVERITY_ORDER, formatDate } from '../lib/format.js';
 
-export default function Report({ report, scan, engine, previous }) {
+export default function Report({ report, scan, previous }) {
   return (
     <div className="report">
       <Overview report={report} previous={previous} />
-      <AiCard report={report} scan={scan} engine={engine} />
+      <AiCard report={report} scan={scan} />
       <Findings report={report} aiPending={scan.phase === 'running' && scan.steps.ai?.status === 'running'} />
       <div className="two-col">
         <HeadersCard headers={report.headers} />
@@ -119,19 +119,20 @@ function Fact({ label, value }) {
 
 // ─── AI ──────────────────────────────────────────────────────────────────────
 
-function AiCard({ report, scan, engine }) {
+function AiCard({ report, scan }) {
   const ai = report.ai;
   const step = scan.steps.ai;
   const generating = scan.phase === 'running' && step?.status === 'running';
 
   if (ai) {
+    const builtin = ai.engine === 'builtin';
     return (
       <section className="card ai-card fade-up">
         <div className="ai-head">
-          <h2><Sparkles size={17} /> Analisi AI</h2>
+          <h2><Sparkles size={17} /> Analisi</h2>
           <span className="spacer" />
           <span className="dim" style={{ fontSize: 12.5 }}>
-            {ai.model} · in locale · {(ai.durationMs / 1000).toFixed(1)} s
+            {builtin ? 'Analista integrato · istantanea' : `AI ${ai.model} · in locale · ${(ai.durationMs / 1000).toFixed(1)} s`}
           </span>
         </div>
         <p className="ai-summary">{ai.summary}</p>
@@ -150,10 +151,10 @@ function AiCard({ report, scan, engine }) {
     return (
       <section className="card ai-card" aria-live="polite" aria-busy="true">
         <div className="ai-head">
-          <h2><Sparkles size={17} /> Analisi AI</h2>
+          <h2><Sparkles size={17} /> Analisi</h2>
           <span className="spacer" />
           <span className="dim mono" style={{ fontSize: 12.5 }}>
-            {scan.queued > 0 ? `in coda · posizione ${scan.queued}` : scan.aiProgress ? `${scan.aiProgress.tokens} token` : 'avvio del modello…'}
+            {scan.queued > 0 ? `in coda · posizione ${scan.queued}` : scan.aiProgress ? `${scan.aiProgress.tokens} token` : 'in preparazione…'}
           </span>
         </div>
         {summary ? (
@@ -161,27 +162,13 @@ function AiCard({ report, scan, engine }) {
         ) : (
           <div className="skeleton"><span style={{ width: '92%' }} /><span style={{ width: '78%' }} /><span style={{ width: '60%' }} /></div>
         )}
-        <p className="dim" style={{ fontSize: 12.5 }}>Il report qui sotto è già completo: l’AI aggiunge sintesi, scenari d’attacco e priorità.</p>
       </section>
     );
   }
 
-  if (scan.aiError) {
-    return (
-      <div className="notice error">
-        <TriangleAlert size={18} />
-        <p><strong>Analisi AI non riuscita.</strong> {scan.aiError}</p>
-      </div>
-    );
-  }
-
   const reason = scan.fromHistory
-    ? 'Questa scansione è stata salvata senza analisi AI.'
-    : step?.detail === 'Disattivata per questa scansione'
-      ? 'Analisi AI disattivata per questa scansione.'
-      : engine?.state === 'disabled'
-        ? 'L’AI è disattivata nella configurazione del backend.'
-        : 'Il modello AI non era pronto: installalo dalla home per ottenere sintesi, scenari d’attacco e priorità.';
+    ? 'Questa scansione è stata salvata senza analisi.'
+    : 'Analisi disattivata per questa scansione: riattivala dal modulo per avere sommario, scenari d’attacco e priorità.';
   return (
     <div className="notice no-print">
       <Sparkles size={18} />
@@ -231,6 +218,7 @@ function Findings({ report, aiPending }) {
                 key={f.id}
                 finding={f}
                 scenario={report.ai?.scenarios?.[f.id]}
+                scenarioByAi={report.ai?.engine !== 'builtin'}
                 aiPending={aiPending && f.severity !== 'info'}
                 defaultOpen={i === 0 && filter === 'all' && ['critical', 'high'].includes(f.severity)}
               />
@@ -242,7 +230,7 @@ function Findings({ report, aiPending }) {
   );
 }
 
-function FindingItem({ finding: f, scenario, aiPending, defaultOpen }) {
+function FindingItem({ finding: f, scenario, scenarioByAi, aiPending, defaultOpen }) {
   const [open, setOpen] = useState(defaultOpen);
   const id = `finding-${f.id}`;
   return (
@@ -250,7 +238,7 @@ function FindingItem({ finding: f, scenario, aiPending, defaultOpen }) {
       <button className="finding-row" aria-expanded={open} aria-controls={id} onClick={() => setOpen(o => !o)}>
         <span className={`badge sev-${f.severity}`}>{SEVERITY[f.severity].short}</span>
         <span className="title">{f.title}</span>
-        <span className="cat">{scenario && <Sparkles size={13} className="ai-mark" style={{ marginRight: 6, verticalAlign: -2 }} />}{f.category}</span>
+        <span className="cat">{scenario && scenarioByAi && <Sparkles size={13} className="ai-mark" style={{ marginRight: 6, verticalAlign: -2 }} />}{f.category}</span>
         <ChevronDown size={18} className="chev" />
       </button>
       <div className="finding-body" id={id} hidden={!open}>
@@ -265,7 +253,7 @@ function FindingItem({ finding: f, scenario, aiPending, defaultOpen }) {
         )}
         {scenario ? (
           <div className="scenario">
-            <h4><Skull size={13} /> Scenario d’attacco · AI</h4>
+            <h4><Skull size={13} /> Scenario d’attacco{scenarioByAi ? ' · AI' : ''}</h4>
             <p>{scenario}</p>
           </div>
         ) : aiPending ? (
